@@ -19,7 +19,8 @@ const App = () => {
   const [cities, setCities] = useState([]);
   const [temperature, setTemperature] = useState(0);
   const [units, setUnits] = useState('metric');
-  const [clothtesIcon, setClothtesIcon] = useState(null);
+  const [clothesImg, setClothesImg] = useState(null);
+
 
 
   // 현재 날짜 및 시간
@@ -28,6 +29,7 @@ const App = () => {
 
   // 현재 위치
   const getCurrentLocation = () => {
+    // 사용자의 현재 위치를 요청
     navigator.geolocation.getCurrentPosition((position) => {
       const lat = position.coords.latitude;
       const lon = position.coords.longitude;
@@ -35,15 +37,46 @@ const App = () => {
     });
   };
 
-
-
   // 현재 위치 날씨
   const getWeatherByCurrentLocation = async (lat, lon) => {
-    const weatherUrl =
-      `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`;
-
     try {
-      const { data } = await axios.get(weatherUrl);
+      const { data } = await axios({
+        method: 'get',
+        url: `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`
+      });
+      data.main.temp = Math.floor(data.main.temp, 1);
+      setWeatherResult(data);
+    } catch (error) {
+      console.log(`Error: ${error}`);
+    }
+  };
+
+  // 컴포넌트 마운트시 현재위치 가져오기
+  useEffect(() => {
+    getCurrentLocation();
+  }, []);
+
+
+  // API 에서 받아온 현재 날씨
+  useEffect(() => {
+    if (weatheResult.main) {
+      //온도 소수점 제거하여 추출
+      const temperature = Math.floor(weatheResult.main.temp).toFixed(0);
+
+      setTemperature(temperature);
+    }
+  }, [weatheResult]);
+
+  
+  // 도시 클릭 (지도로 변경 예정)
+  // 도시 클릭 시 섭씨/화씨 온도 오류
+  const searchWeather = async (cities) => {
+    try {
+      const { data } = await axios({
+        method: 'get',
+        url: `https://api.openweathermap.org/data/2.5/weather?q=${cities}&appid=${apiKey}`
+      });
+      data.main.temp = Math.floor(data.main.temp, 1);
       setWeatherResult(data);
     } catch (error) {
       console.log(`Error: ${error}`);
@@ -51,27 +84,8 @@ const App = () => {
   };
 
   useEffect(() => {
-    getCurrentLocation();
+    setCities(['Seoul', 'Busan', 'Jeonju', 'Inchon', 'Daegu', 'Gwangju', 'Daejeon', 'Ulsan'])
   }, []);
-
-
-
-  // API 에서 받아온 현재 날씨
-  useEffect(() => {
-    if (weatheResult.main) {
-      const temperature = Math.floor(weatheResult.main.temp).toFixed(0);
-      setTemperature(temperature);
-    }
-  }, [weatheResult]);
-
-
-
-  // 날씨 아이콘
-  //WeatherResult.weater[0].icon
-  const weathericonUrl =<img src={`http://openweathermap.org/img/wn/${weatheResult.weather && weatheResult.weather[0].icon}.png`}
-    alt={`${weatheResult.weather && weatheResult.weather[0].description}`} />;
-
-
 
   // 섭씨/화씨 변환
   const celsiusToFahrenheit = (celsius) => {
@@ -88,7 +102,7 @@ const App = () => {
   // weatherResult에서 받아 온 현재 온도 값
   useEffect(() => {
     if (weatheResult.main) {
-      const temperature = weatheResult.main.temp;
+      const temperature = weatheResult.main.temp.toFixed(0);
       setTemperature(temperature);
     }
   }, [weatheResult]);
@@ -98,10 +112,8 @@ const App = () => {
     if (units === 'metric') {
       // 섭씨 -> 화씨
       const fahrenheit = celsiusToFahrenheit(temperature);
-
       setUnits('imperial');
       setTemperature(fahrenheit);
-
     } else if (units === 'imperial') {
       // 화씨 -> 섭씨
       const celsius = fahrenheitToCelsius(temperature);
@@ -112,50 +124,33 @@ const App = () => {
 
 
 
-  // 지역(지도) 클릭
-  const searchWeather = async (cities) => {
-    try {
-      const { data } = await axios({
-        method: 'get',
-        url: `https://api.openweathermap.org/data/2.5/weather?q=${cities}&appid=${apiKey}`
-      });
-      setWeatherResult(data);
-    } catch (error) {
-      console.log(`Error: ${error}`);
-    }
-  };
-
-  useEffect(() => {
-    setCities(['Seoul', 'Busan', 'Jeonju', 'Inchon', 'Daegu', 'Gwangju', 'Daejeon', 'Ulsan'])
-  }, []);
 
 
-  // 기온 따른 옷차림
+  // 날씨 아이콘
+  //WeatherResult.weater[0].icon
+  const weathericonUrl = <img src={`http://openweathermap.org/img/wn/${weatheResult.weather && weatheResult.weather[0].icon}.png`}
+    alt={`${weatheResult.weather && weatheResult.weather[0].description}`} />;
+
+    
+  // 온도에 따른 옷차림
   const selectClothes = (temperature) => {
 
     if (temperature <= 4) {
-      setClothtesIcon(<img src={winter} />);
-    }
-    else if (temperature >= 5 && temperature < 9) {
-      setClothtesIcon(<img src={earlyWinter} />);
-    }
-    else if (temperature >= 9 && temperature < 12) {
-      setClothtesIcon(<img src={beginWinder} />);
-    }
-    else if (temperature >= 12 && temperature < 17) {
-      setClothtesIcon(<img src={earlySpring} />);
-    }
-    else if (temperature >= 17 && temperature < 20) {
-      setClothtesIcon(<img src={spring} />);
-    }
-    else if (temperature >= 20 && temperature < 23) {
-      setClothtesIcon(<img src={earlySummer} />);
-    }
-    else if (temperature >= 23 && temperature < 28) {
-      setClothtesIcon(<img src={beginSummer} />);
-    }
-    else {
-      setClothtesIcon(<img src={summer} />);
+      setClothesImg(<img src={winter} />);
+    } else if (temperature >= 5 && temperature < 9) {
+      setClothesImg(<img src={earlyWinter} />);
+    } else if (temperature >= 9 && temperature < 12) {
+      setClothesImg(<img src={beginWinder} />);
+    } else if (temperature >= 12 && temperature < 17) {
+      setClothesImg(<img src={earlySpring} />);
+    } else if (temperature >= 17 && temperature < 20) {
+      setClothesImg(<img src={spring} />);
+    } else if (temperature >= 20 && temperature < 23) {
+      setClothesImg(<img src={earlySummer} />);
+    } else if (temperature >= 23 && temperature < 28) {
+      setClothesImg(<img src={beginSummer} />);
+    } else {
+      setClothesImg(<img src={summer} />);
     }
   };
 
@@ -175,22 +170,28 @@ const App = () => {
           Object.keys(weatheResult).length !== 0 && (
             <div className="resultWrap">
               <div className="city">
+                {/* 현재 위치 도시 */}
                 {weatheResult.name}
               </div>
               <div className="skyIcon">
+                {/* 날씨 아이콘 */}
                 {weathericonUrl}
               </div>
               <div className="sky">
+                {/* 현재 날씨 */}
                 {weatheResult.weather[0].main}
               </div>
               <div className="temperature">
+                {/* 현재 온도 */}
                 현재 기온 : {temperature}
                 <button onClick={handleConvertTemperature}>
+                  {/* 섭씨/화씨 버튼 */}
                   {units === 'metric' ? '°C' : '°F'}
                 </button>
               </div>
               <div className="clothesImg">
-                추천 옷차림 : {clothtesIcon}
+                {/* 옷차림 이미지 */}
+                추천 옷차림 : {clothesImg}
               </div>
             </div>
           )
