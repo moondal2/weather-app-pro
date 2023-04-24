@@ -10,11 +10,7 @@ import earlySummer from './img/005.jpg';
 import beginSummer from './img/006.jpg';
 import summer from './img/007.jpg';
 
-
-const apiKey = "a14996009fd1cec14f59d1e28fb8f628";
-
-
-const App = () => {
+const APP = () => {
   const [weatheResult, setWeatherResult] = useState({});
   const [cities, setCities] = useState([]);
   const [temperature, setTemperature] = useState(0);
@@ -22,10 +18,12 @@ const App = () => {
   const [clothesImg, setClothesImg] = useState(null);
 
 
+  // 현재 날짜
+  const today = new Date();
+  let month = today.getMonth() + 1;
+  let date = today.getDate();
 
-  // 현재 날짜 및 시간
-
-
+  document.write.apply(month + '월' + date + '일' + day + '요일');
 
   // 현재 위치
   const getCurrentLocation = () => {
@@ -42,7 +40,8 @@ const App = () => {
     try {
       const { data } = await axios({
         method: 'get',
-        url: `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`
+        // url: `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=${units}`
+        url: `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${process.env.REACT_APP_OPENWEATHERMAP_API_KEY}&units=${units}`
       });
       data.main.temp = Math.floor(data.main.temp, 1);
       setWeatherResult(data);
@@ -51,41 +50,19 @@ const App = () => {
     }
   };
 
-  // 컴포넌트 마운트시 현재위치 가져오기
+  // 컴포넌트 마운트시 현재 위치 가져오기
   useEffect(() => {
     getCurrentLocation();
   }, []);
-
 
   // API 에서 받아온 현재 날씨
   useEffect(() => {
     if (weatheResult.main) {
       //온도 소수점 제거하여 추출
       const temperature = Math.floor(weatheResult.main.temp).toFixed(0);
-
       setTemperature(temperature);
     }
   }, [weatheResult]);
-
-  
-  // 도시 클릭 (지도로 변경 예정)
-  // 도시 클릭 시 섭씨/화씨 온도 오류
-  const searchWeather = async (cities) => {
-    try {
-      const { data } = await axios({
-        method: 'get',
-        url: `https://api.openweathermap.org/data/2.5/weather?q=${cities}&appid=${apiKey}`
-      });
-      data.main.temp = Math.floor(data.main.temp, 1);
-      setWeatherResult(data);
-    } catch (error) {
-      console.log(`Error: ${error}`);
-    }
-  };
-
-  useEffect(() => {
-    setCities(['Seoul', 'Busan', 'Jeonju', 'Inchon', 'Daegu', 'Gwangju', 'Daejeon', 'Ulsan'])
-  }, []);
 
   // 섭씨/화씨 변환
   const celsiusToFahrenheit = (celsius) => {
@@ -107,6 +84,26 @@ const App = () => {
     }
   }, [weatheResult]);
 
+
+  // 도시 클릭 (지도 이미지로 변경 예정)
+  const searchWeather = async (cities) => {
+    try {
+      const { data } = await axios({
+        method: 'get',
+        // url: `https://api.openweathermap.org/data/2.5/weather?q=${cities}&appid=${apiKey}`
+        url: `https://api.openweathermap.org/data/2.5/weather?q=${cities}&appid=${process.env.REACT_APP_OPENWEATHERMAP_API_KEY}&units=${units}`
+      });
+      data.main.temp = Math.floor(data.main.temp, 1);
+      setWeatherResult(data);
+    } catch (error) {
+      console.log(`Error: ${error}`);
+    }
+  }
+  // 도시 별 기온 가져 옴
+  useEffect(() => {
+    setCities(['Seoul', 'Busan', 'Jeonju', 'Inchon', 'Daegu', 'Gwangju', 'Daejeon', 'Ulsan'])
+  }, []);
+
   //버튼 클릭 시 temperature 값을 변환한 값으로 변경
   const handleConvertTemperature = () => {
     if (units === 'metric') {
@@ -123,15 +120,12 @@ const App = () => {
   }
 
 
-
-
-
-  // 날씨 아이콘
+  // 날씨 아이콘  => 이미지 변경
   //WeatherResult.weater[0].icon
   const weathericonUrl = <img src={`http://openweathermap.org/img/wn/${weatheResult.weather && weatheResult.weather[0].icon}.png`}
     alt={`${weatheResult.weather && weatheResult.weather[0].description}`} />;
 
-    
+
   // 온도에 따른 옷차림
   const selectClothes = (temperature) => {
 
@@ -208,4 +202,4 @@ const App = () => {
   );
 };
 
-export default App;
+export default APP;
